@@ -224,6 +224,115 @@ const JSONPlaceholderPage = () => {
   )
 }
 
+const CurrencyPage = () => {
+  const [codes, setCodes] = useState([])
+  const [from, setFrom] = useState('USD')
+  const [to, setTo] = useState('EUR')
+  const [amount, setAmount] = useState(1)
+  const [result, setResult] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const API_KEY = '83455fc388c403415c50275b'
+
+  useEffect(() => {
+    const fetchCodes = async () => {
+      try {
+        const res = await fetch(`https://v6.exchangerate-api.com/v6/${API_KEY}/codes`)
+        const data = await res.json()
+        setCodes(data.supported_codes || [])
+      } catch (err) {
+        console.error("Failed to fetch currency codes", err)
+      }
+    }
+    fetchCodes()
+  }, [])
+
+  const convert = async () => {
+    if (!amount || amount <= 0) return
+    setLoading(true)
+    try {
+      const res = await fetch(`https://v6.exchangerate-api.com/v6/${API_KEY}/pair/${from}/${to}/${amount}`)
+      const data = await res.json()
+      setResult(data)
+    } catch (err) {
+      console.error("Conversion failed", err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const swap = () => {
+    setFrom(to)
+    setTo(from)
+  }
+
+  useEffect(() => {
+    convert()
+  }, [from, to])
+
+  return (
+    <div className="page-entry">
+      <header className="page-header">
+        <h1 className="page-title">Currency Nexus</h1>
+        <p className="page-desc">High-precision monetary exchange engine utilizing real-time fiscal data streams.</p>
+      </header>
+
+      <div className="glass-panel tester-card">
+        <div className="exchange-container">
+          <div className="exchange-controls">
+            <div className="exchange-input-group">
+              <label className="exchange-label">Source Asset</label>
+              <select className="currency-select" value={from} onChange={(e) => setFrom(e.target.value)}>
+                {codes.map(([code, name]) => (
+                  <option key={code} value={code}>{code} - {name}</option>
+                ))}
+              </select>
+            </div>
+
+            <button className="swap-btn" onClick={swap} title="Swap Currencies">
+              ⇄
+            </button>
+
+            <div className="exchange-input-group">
+              <label className="exchange-label">Target Asset</label>
+              <select className="currency-select" value={to} onChange={(e) => setTo(e.target.value)}>
+                {codes.map(([code, name]) => (
+                  <option key={code} value={code}>{code} - {name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="amount-group">
+            <label className="exchange-label">Amount</label>
+            <input 
+              type="number" 
+              className="amount-input" 
+              value={amount} 
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="Enter amount..."
+            />
+          </div>
+
+          <button onClick={convert} disabled={loading} style={{ width: '100%', padding: '1.2rem' }}>
+            {loading ? 'Recalculating...' : '💎 Execute Exchange'}
+          </button>
+
+          {result && !loading && (
+            <div className="result-card">
+              <div className="result-amount">
+                {result.conversion_result.toLocaleString()} <span className="currency-badge">{to}</span>
+              </div>
+              <div className="result-rate">
+                1 {from} = {result.conversion_rate} {to}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 const HomePage = () => (
   <div className="page-entry">
     <header className="page-header">
@@ -249,10 +358,16 @@ const HomePage = () => (
         <p>Synthesizing high-fidelity random identities for data validation and persona testing. End-to-end persona synchronization.</p>
         <div className="action-cta">Request Profile →</div>
       </Link>
-      <Link to="/json" className="glass-panel action-card">
+      <Link to="/exchange" className="glass-panel action-card">
+        <div className="action-icon">💎</div>
+        <h3>Currency Nexus</h3>
+        <p>Real-time fiscal exchange engine. Convert between 160+ world currencies with high-precision neural synchronization.</p>
+        <div className="action-cta">Initialize Exchange →</div>
+      </Link>
+      <Link to="/json" className="glass-panel action-card" style={{ gridColumn: 'span 1' }}>
         <div className="action-icon">🔗</div>
         <h3>Data Architect</h3>
-        <p>Probing REST endpoints with precision. Stress-test data structures across posts, comments, albums, and raw objects.</p>
+        <p>Probing REST endpoints. Stress-test data structures across posts, comments, albums, and raw objects.</p>
         <div className="action-cta">Launch Architect →</div>
       </Link>
     </div>
@@ -273,6 +388,7 @@ const Navbar = () => (
         <NavLink to="/dog" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>Canine</NavLink>
         <NavLink to="/joke" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>Humor</NavLink>
         <NavLink to="/user" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>Identities</NavLink>
+        <NavLink to="/exchange" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>Currency</NavLink>
         <NavLink to="/json" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>Core Objects</NavLink>
       </nav>
       <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -294,6 +410,7 @@ function App() {
             <Route path="/dog" element={<DogPage />} />
             <Route path="/joke" element={<JokePage />} />
             <Route path="/user" element={<UserPage />} />
+            <Route path="/exchange" element={<CurrencyPage />} />
             <Route path="/json" element={<JSONPlaceholderPage />} />
           </Routes>
         </main>
